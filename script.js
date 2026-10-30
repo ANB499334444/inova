@@ -490,6 +490,7 @@ if (categoryGallery) {
   const categoryDescription = document.querySelector("#category-description");
   const currentBreadcrumb = document.querySelector("#breadcrumb-current");
   const errorMessage = document.querySelector("#category-error");
+  const filtersPanel = document.querySelector("#category-filters");
 
   if (!category || !categoryKey) {
     if (errorMessage) {
@@ -519,6 +520,14 @@ if (categoryGallery) {
       const [name, images = []] = Array.isArray(inspiration) ? inspiration : [inspiration, []];
       const card = document.createElement("article");
       card.className = "inspiration-card";
+      const normalizedName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const filterType = categoryKey === "salon"
+        ? /canape|fauteuil/.test(normalizedName) ? "Assises" : /rangement/.test(normalizedName) ? "Rangements" : "Inspirations"
+        : categoryKey === "salle-a-manger"
+          ? /table|repas|recevoir/.test(normalizedName) ? "Tables" : /chaise/.test(normalizedName) ? "Assises" : /buffet/.test(normalizedName) ? "Rangements" : "Inspirations"
+          : /lit/.test(normalizedName) ? "Lits" : /chevet/.test(normalizedName) ? "Chevets" : /rangement/.test(normalizedName) ? "Rangements" : "Inspirations";
+      card.dataset.filterType = filterType;
+      card.dataset.searchText = normalizedName;
       const productNumber = index + 1;
       const productUrl = `produit.html?category=${encodeURIComponent(categoryKey)}&product=${String(productNumber).padStart(2, "0")}`;
       const productLink = document.createElement("a");
@@ -565,6 +574,82 @@ if (categoryGallery) {
       card.append(productLink, actions);
       categoryGallery.append(card);
     });
+
+    if (filtersPanel) {
+      const searchInput = document.querySelector("#category-search");
+      const sortSelect = document.querySelector("#category-sort");
+      const filterOptions = document.querySelector("#category-filter-options");
+      const resultCount = document.querySelector("#category-result-count");
+      const noResults = document.querySelector("#category-no-results");
+      const resetButton = document.querySelector("#category-filter-reset");
+
+      if (
+        searchInput instanceof HTMLInputElement &&
+        sortSelect instanceof HTMLSelectElement &&
+        filterOptions instanceof HTMLElement &&
+        resultCount instanceof HTMLElement &&
+        noResults instanceof HTMLElement &&
+        resetButton instanceof HTMLButtonElement
+      ) {
+        const cards = Array.from(categoryGallery.querySelectorAll(".inspiration-card"));
+        let activeType = "all";
+        const types = [...new Set(cards.map((card) => card.dataset.filterType).filter(Boolean))];
+        const filterButtons = new Map();
+
+        [["all", "Tout voir"], ...types.map((type) => [type, type])].forEach(([value, label]) => {
+          const button = document.createElement("button");
+          button.className = "category-filter-chip";
+          button.type = "button";
+          button.dataset.filterType = value;
+          button.setAttribute("aria-pressed", String(value === activeType));
+          const count = document.createElement("span");
+          count.className = "category-filter-chip-count";
+          count.textContent = String(value === "all" ? cards.length : cards.filter((card) => card.dataset.filterType === value).length);
+          button.append(document.createTextNode(label), count);
+          button.addEventListener("click", () => {
+            activeType = value;
+            filterButtons.forEach((item, key) => item.setAttribute("aria-pressed", String(key === activeType)));
+            updateVisibleCards();
+          });
+          filterButtons.set(value, button);
+          filterOptions.append(button);
+        });
+
+        const updateVisibleCards = () => {
+          const query = searchInput.value.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          const sortedCards = [...cards];
+          if (sortSelect.value === "az") {
+            sortedCards.sort((a, b) => a.querySelector("h2").textContent.localeCompare(b.querySelector("h2").textContent, "fr"));
+          } else if (sortSelect.value === "za") {
+            sortedCards.sort((a, b) => b.querySelector("h2").textContent.localeCompare(a.querySelector("h2").textContent, "fr"));
+          }
+
+          sortedCards.forEach((card) => {
+            const matchesType = activeType === "all" || card.dataset.filterType === activeType;
+            const matchesSearch = !query || card.dataset.searchText.includes(query);
+            card.hidden = !matchesType || !matchesSearch;
+            categoryGallery.append(card);
+          });
+
+          const visibleCount = sortedCards.filter((card) => !card.hidden).length;
+          resultCount.textContent = `${visibleCount} inspiration${visibleCount === 1 ? "" : "s"} affichée${visibleCount === 1 ? "" : "s"} sur ${cards.length}`;
+          noResults.hidden = visibleCount > 0;
+        };
+
+        searchInput.addEventListener("input", updateVisibleCards);
+        sortSelect.addEventListener("change", updateVisibleCards);
+        resetButton.addEventListener("click", () => {
+          searchInput.value = "";
+          sortSelect.value = "recommended";
+          activeType = "all";
+          filterButtons.forEach((button, key) => button.setAttribute("aria-pressed", String(key === activeType)));
+          updateVisibleCards();
+          searchInput.focus();
+        });
+        filtersPanel.hidden = false;
+        updateVisibleCards();
+      }
+    }
   }
 }
 

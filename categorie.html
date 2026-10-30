@@ -76,6 +76,32 @@
         <a href="categorie.html?category=chambre" data-category="chambre">Chambre</a>
       </nav>
 
+      <section class="category-filters section-wrap" id="category-filters" aria-label="Rechercher et filtrer les inspirations" hidden>
+        <div class="category-filters-heading">
+          <div>
+            <p class="eyebrow"><span></span> Affinez votre recherche</p>
+            <p class="category-result-count" id="category-result-count" role="status" aria-live="polite"></p>
+          </div>
+          <button class="category-filter-reset" id="category-filter-reset" type="button">Tout effacer</button>
+        </div>
+        <div class="category-filter-controls">
+          <label class="category-search">
+            <span>Rechercher</span>
+            <input id="category-search" type="search" placeholder="Ex. canapé, table, rangement" autocomplete="off" />
+          </label>
+          <label class="category-sort">
+            <span>Trier par</span>
+            <select id="category-sort">
+              <option value="recommended">Ordre recommandé</option>
+              <option value="az">Nom : A à Z</option>
+              <option value="za">Nom : Z à A</option>
+            </select>
+          </label>
+        </div>
+        <div class="category-filter-options" id="category-filter-options" role="group" aria-label="Filtrer par type de mobilier"></div>
+        <p class="category-no-results" id="category-no-results" hidden>Aucune inspiration ne correspond à ces filtres. Modifiez votre recherche ou effacez les filtres.</p>
+      </section>
+
       <section class="category-gallery section-wrap" id="category-gallery" aria-label="Inspirations de la collection">
         <p class="category-error" id="category-error" hidden>
           Cette catégorie n’existe pas. <a href="index.html#univers">Voir nos univers</a>
